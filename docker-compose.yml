@@ -1,57 +1,92 @@
 services:
+
   backend:
     build: ./backend-git-masters
+
     container_name: fastapi_app
+
     ports:
       - "8000:8000"
+
     depends_on:
       - db
+
     command: ["sh", "./entrypoint.sh"]
+
+    restart: unless-stopped
+
     environment:
-      DB_HOST: ${DB_HOST}
-      DB_PORT: ${DB_PORT}
+      DB_HOST: db
+      DB_PORT: 5432
       DB_NAME: ${DB_NAME}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
-      DATABASE_URL: postgresql://postgres:GrupoASD*@db:5432/git_master
 
-    # opcional si quieres usar el .env
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+
     env_file:
       - .env
 
+    volumes:
+      - ./backend-git-masters:/app
+
+    tty: true
+    stdin_open: true
+
   frontend:
     build: ./frontend-git-masters
+
     container_name: react_app
+
     ports:
       - "5173:80"
+
     depends_on:
       - backend
+
+    restart: unless-stopped
+
     environment:
-      VITE_API_URL: http://localhost:8000
+      VITE_API_URL: http://3D5lciScu7VpJlsGRUy4hOYN6ad_3xawZCm5GEjfZbDXDnooR.ngrok-free.app
+
+    volumes:
+      - ./frontend-git-masters:/app
 
   db:
     image: postgres:15
+
     container_name: postgres_db
+
     restart: always
+
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
+
     ports:
       - "5432:5432"
+
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
   ngrok:
     image: ngrok/ngrok:latest
+
     container_name: ngrok
+
     depends_on:
       - backend
+
     command: http backend:8000
+
     environment:
       NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
+
     ports:
       - "4040:4040"
+
+    restart: unless-stopped
 
 volumes:
   postgres_data:
