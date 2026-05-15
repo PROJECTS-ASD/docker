@@ -21,7 +21,6 @@ services:
       DB_NAME: ${DB_NAME}
       DB_USER: ${DB_USER}
       DB_PASSWORD: ${DB_PASSWORD}
-
       DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
 
     env_file:
@@ -47,7 +46,7 @@ services:
     restart: unless-stopped
 
     environment:
-      VITE_API_URL: http://3D5lciScu7VpJlsGRUy4hOYN6ad_3xawZCm5GEjfZbDXDnooR.ngrok-free.app
+      VITE_API_URL: https://harvest-skies-repeal.ngrok-free.dev
 
     volumes:
       - ./frontend-git-masters:/app
@@ -76,7 +75,7 @@ services:
     container_name: ngrok
 
     depends_on:
-      - backend
+      - frontend
 
     command: http backend:8000
 
