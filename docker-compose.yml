@@ -10,10 +10,10 @@ services:
     depends_on:
       - db
 
-    command: >
-      sh -c "uvicorn app.main:app --host 0.0.0.0 --port 8000"
-
     restart: unless-stopped
+
+    env_file:
+      - .env
 
     environment:
       DB_HOST: db
@@ -23,14 +23,11 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
 
-    env_file:
-      - .env
+    command: >
+      sh -c "uvicorn app.main:app --host 0.0.0.0 --port 8000"
 
     volumes:
       - ./backend-git-masters:/app
-
-    tty: true
-    stdin_open: true
 
 
   frontend:
@@ -54,8 +51,18 @@ services:
 
     command: npm run dev -- --host 0.0.0.0
 
-    tty: true
-    stdin_open: true
+
+  tunnel:
+    build: ./tunnel
+    container_name: cloudflare_tunnel
+
+    depends_on:
+      - backend
+
+    env_file:
+      - .env
+
+    restart: unless-stopped
 
 
   db:
