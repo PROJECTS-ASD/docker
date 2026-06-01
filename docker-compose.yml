@@ -1,7 +1,7 @@
 services:
 
   backend:
-    build: ./backend-git-masters
+    image: brayanib14/backend:1.0
     container_name: fastapi_app
 
     ports:
@@ -26,12 +26,9 @@ services:
     command: >
       sh -c "uvicorn app.main:app --host 0.0.0.0 --port 8000"
 
-    volumes:
-      - ./backend-git-masters:/app
-
 
   frontend:
-    build: ./frontend-git-masters
+    image: brayanib14/frontend:1.0
     container_name: react_app
 
     ports:
@@ -45,15 +42,11 @@ services:
     environment:
       VITE_API_URL: http://localhost:8000
 
-    volumes:
-      - ./frontend-git-masters:/app
-      - /app/node_modules
-
     command: npm run dev -- --host 0.0.0.0
 
 
   tunnel:
-    build: ./tunnel
+    image: cloudflare/cloudflared:latest
     container_name: cloudflare_tunnel
 
     depends_on:
@@ -63,6 +56,8 @@ services:
       - .env
 
     restart: unless-stopped
+
+    command: tunnel run
 
 
   db:
