@@ -16,4 +16,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY start_tunnel.py .
 
-CMD ["python", "start_tunnel.py"]
+CMD ["python", "-u", "start_tunnel.py"]

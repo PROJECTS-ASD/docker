@@ -1,7 +1,10 @@
 services:
 
   backend:
-    image: brayanib14/backend:1.0
+    build:
+      context: ./backend-git-masters
+      dockerfile: Dockerfile
+
     container_name: fastapi_app
 
     ports:
@@ -28,7 +31,10 @@ services:
 
 
   frontend:
-    image: brayanib14/frontend:1.0
+    build:
+      context: ./frontend-git-masters
+      dockerfile: Dockerfile
+
     container_name: react_app
 
     ports:
@@ -46,7 +52,9 @@ services:
 
 
   tunnel:
-    image: cloudflare/cloudflared:latest
+    build:
+      context: ./tunnel
+
     container_name: cloudflare_tunnel
 
     depends_on:
@@ -57,11 +65,10 @@ services:
 
     restart: unless-stopped
 
-    command: tunnel run
-
 
   db:
     image: postgres:15
+
     container_name: postgres_db
 
     restart: always

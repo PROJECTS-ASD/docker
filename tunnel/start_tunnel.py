@@ -1,32 +1,35 @@
 import os
 import re
+import sys
 import time
 import subprocess
 import requests
 
+sys.stdout.reconfigure(line_buffering=True)
+
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 OWNER = os.getenv("GITHUB_OWNER")
-REPO = os.getenv("GITHUB_REPO")
 WEBHOOK_ID = os.getenv("WEBHOOK_ID")
 WEBHOOK_SECRET = os.getenv("GITHUB_WEBHOOK_SECRET")
 
 
 def wait_backend():
+    print("⏳ Esperando backend...")
+
     while True:
         try:
-            r = requests.get(
+            response = requests.get(
                 "http://backend:8000/docs",
                 timeout=5
             )
 
-            if r.status_code == 200:
+            if response.status_code == 200:
                 print("✅ Backend listo")
                 return
 
         except Exception:
             pass
 
-        print("⏳ Esperando backend...")
         time.sleep(3)
 
 
@@ -38,15 +41,17 @@ def start_tunnel():
         [
             "cloudflared",
             "tunnel",
+            "--no-autoupdate",
             "--url",
             "http://backend:8000"
         ],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        text=True
+        text=True,
+        bufsize=1
     )
 
-    url = None
+    tunnel_url = None
 
     while True:
 
@@ -63,26 +68,26 @@ def start_tunnel():
         )
 
         if match:
-            url = match.group(0)
+            tunnel_url = match.group(0)
             break
 
-    if not url:
+    if not tunnel_url:
         raise Exception(
-            "❌ No se pudo obtener URL del tunnel"
+            "❌ No se pudo obtener la URL del túnel"
         )
 
-    print(f"🌎 URL pública: {url}")
+    print(f"🌎 URL pública: {tunnel_url}")
 
-    return url, process
+    return tunnel_url, process
 
 
-def update_webhook(url):
+def update_webhook(tunnel_url):
 
     print("🔄 Actualizando webhook GitHub...")
 
     api_url = (
-        f"https://api.github.com/repos/"
-        f"{OWNER}/{REPO}/hooks/{WEBHOOK_ID}"
+        f"https://api.github.com/orgs/"
+        f"{OWNER}/hooks/{WEBHOOK_ID}"
     )
 
     headers = {
@@ -91,34 +96,47 @@ def update_webhook(url):
     }
 
     payload = {
+        "active": True,
         "config": {
-            "url": f"{url}/webhook/github",
+            "url": f"{tunnel_url}/webhook/github",
             "content_type": "json",
-            "secret": WEBHOOK_SECRET
+            "secret": WEBHOOK_SECRET,
+            "insecure_ssl": "0"
         }
     }
 
     response = requests.patch(
         api_url,
-        json=payload,
         headers=headers,
-        timeout=20
+        json=payload,
+        timeout=30
     )
 
-    print(response.status_code)
+    print(f"GitHub Status: {response.status_code}")
     print(response.text)
 
     response.raise_for_status()
 
-    print("✅ Webhook actualizado")
+    print("✅ Webhook actualizado correctamente")
 
 
 if __name__ == "__main__":
 
+    print("===================================")
+    print("🚀 INICIANDO SERVICIO DE TÚNEL")
+    print("===================================")
+
+    print("OWNER:", OWNER)
+    print("WEBHOOK_ID:", WEBHOOK_ID)
+    print("TOKEN:", "OK" if GITHUB_TOKEN else "NO")
+    print("===================================")
+
     wait_backend()
 
-    url, process = start_tunnel()
+    tunnel_url, process = start_tunnel()
 
-    update_webhook(url)
+    update_webhook(tunnel_url)
+
+    print("✅ Servicio funcionando")
 
     process.wait()
