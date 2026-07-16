@@ -2,7 +2,7 @@ services:
 
   backend:
     build:
-      context: ./backend-git-masters
+      context: ../backend-git-masters
       dockerfile: Dockerfile
 
     container_name: fastapi_app
@@ -32,7 +32,7 @@ services:
 
   frontend:
     build:
-      context: ./frontend-git-masters
+      context: ../frontend-git-masters
       dockerfile: Dockerfile
 
     container_name: react_app
