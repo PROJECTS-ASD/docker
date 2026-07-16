@@ -1,7 +1,9 @@
 services:
 
   backend:
-    build: ./backend-git-masters
+    build:
+      context: ../backend-git-masters
+      dockerfile: Dockerfile
 
     container_name: fastapi_app
 
@@ -11,9 +13,10 @@ services:
     depends_on:
       - db
 
-    command: ["sh", "./entrypoint.sh"]
-
     restart: unless-stopped
+
+    env_file:
+      - .env
 
     environment:
       DB_HOST: db
@@ -23,30 +26,44 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
 
-    env_file:
-      - .env
+    command: >
+      sh -c "uvicorn app.main:app --host 0.0.0.0 --port 8000"
 
-    volumes:
-      - ./backend-git-masters:/app
-
-    tty: true
-    stdin_open: true
 
   frontend:
-    build: ./frontend-git-masters
+    build:
+      context: ../frontend-git-masters
+      dockerfile: Dockerfile
 
     container_name: react_app
 
     ports:
-      - "5173:80"
+      - "5173:5173"
 
     depends_on:
       - backend
 
     restart: unless-stopped
 
-    volumes:
-      - ./frontend-git-masters:/app
+    environment:
+      VITE_API_URL: http://localhost:8000
+ 
+
+
+  tunnel:
+    build:
+      context: ./tunnel
+
+    container_name: cloudflare_tunnel
+
+    depends_on:
+      - backend
+
+    env_file:
+      - .env
+
+    restart: unless-stopped
+
 
   db:
     image: postgres:15
@@ -66,23 +83,6 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  ngrok:
-    image: ngrok/ngrok:latest
-
-    container_name: ngrok
-
-    depends_on:
-      - frontend
-
-    command: http frontend:80
-
-    environment:
-      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN}
-
-    ports:
-      - "4040:4040"
-
-    restart: unless-stopped
 
 volumes:
   postgres_data:
